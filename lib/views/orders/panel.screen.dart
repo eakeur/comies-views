@@ -1,109 +1,60 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:comies/components/screen.comp.dart';
 import 'package:comies/components/titlebox.comp.dart';
-import 'package:comies/main.dart';
-import 'package:comies/utils/converters.dart';
-import 'package:comies/utils/declarations/environment.dart';
+import 'package:comies/controllers/kitchen.controller.dart' if(dart.library.html) 'package:comies/controllers/kitchenweb.controller.dart' if(dart.library.io) 'package:comies/controllers/kitchen.controller.dart';
 import 'package:comies_entities/comies_entities.dart';
 import 'package:flutter/material.dart';
-import 'package:web_socket_channel/io.dart';
+import 'package:provider/provider.dart';
 
 class OrdersPanelScreen extends StatefulWidget {
-  final channel = IOWebSocketChannel.connect(session.kitchenRoute, headers: {"authorization": session.token});
   @override
   OrdersPanel createState() => OrdersPanel();
 }
 
 class OrdersPanel extends State<OrdersPanelScreen> {
-  bool isBigScreen() => MediaQuery.of(context).size.width > widthDivisor;
-  List<Order> orders = [];
-
-  void setOrder(List<dynamic> ordersMap){
-    ordersMap.map((e) => deserializeOrderMap(e)).toList().forEach((ord) {
-      if (!orders.any((order) => order.id == ord.id)) orders.add(ord);
-    });
-  }
-
-  IOWebSocketChannel ch;
-  ScrollController ctr;
-  String cod = "";
-  var show = true;
-
-  @override
-  void initState(){
-    ctr = new ScrollController();
-    super.initState();
-  }
+  TextEditingController c = new TextEditingController();
+  String type;
 
   @override
   Widget build(BuildContext context) {
-    return ch != null ? StreamBuilder(
-        stream: ch.stream,
-        builder: (context, datea){
-          
-          if (datea.hasData){
-            if (show){cod = datea.data; show = false;}
-            else ctr.jumpTo(double.tryParse(datea.data));
-          }
-          return Scaffold(
-            floatingActionButton: FloatingActionButton(
-              onPressed: () => Navigator.pop(context),
-              tooltip: 'Voltar',
-              child: Icon(Icons.arrow_back),
-              mini: true,
-            ),
+    Widget child;
+    switch (type){
+      case "spoon": child = SpoonScreen(code: c.text); break;
+      case "pan": child = PanScreen(); break;
+      default: child = Scaffold(
+        appBar: AppBar(title: Text("Selecione sua função")),
+        body: Builder(
+          builder: (context){
+            return Wrap(
+              children: [
+                ElevatedButton(child: Text("SOU COLHER"), onPressed: (){
+                  Scaffold.of(context).showBottomSheet((context) => Container(
+                    child: TextFormField(
+                      controller: c,
+                      onFieldSubmitted: (s) => setState((){type = "spoon";}),
+                      onEditingComplete: () => setState((){type = "spoon";}),
+                      onSaved: (s) => setState((){type = "spoon";}),
+                      decoration: InputDecoration(
+                        labelText: "Código da panela",
+                        hintMaxLines: 3,
+                        hintText: "Este código aparecerá na tela em que você que se conectar",
+                        suffix: IconButton(icon: Icon(Icons.add), onPressed: (){
+                          Navigator.pop(context);
+                          setState((){type = "spoon";});
+                        })
+                      ),
+                    )
+                  ));
+                }),
+                ElevatedButton(child: Text("SOU PANELA"), onPressed: (){setState((){type = "pan";});})
+              ],
+            );
+          },
+        )
+      ); break;
+    }
 
-            appBar: AppBar(title: Text("Cozinha" + (cod == "" ? "" : " - ID: $cod"))),
-            floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
+    return child;
 
-
-            body: StreamBuilder(
-                  stream: widget.channel.stream,
-                  builder: (context, data){
-
-                    if (data.hasData){
-                      setOrder(jsonDecode(data.data));
-                      List<Order> pending = orders.where((ord) => ord.status == Status.pending).toList();
-                      List<Order> preparing = orders.where((ord) => ord.status == Status.preparing).toList();
-                      return Screen(
-                        onRefresh: () => new Future(() => setState(() {})),
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(flex: 35,
-                                child: ListView(controller: ctr, children: [
-                                  for (var order in pending) OrderCard(order: order)
-                                ]),
-                              ),
-                              Expanded(flex: 65,
-                                child: ListView(children: [
-                                  for (var order in preparing) OrderCard(order: order)
-                                ]),
-                              )
-                            ],
-                          )
-                        ]
-                      );
-                    } else return Center(child: Text("Ops! Nenhum pedido na cozinha."));
-                  },
-                )
-
-          );
-        },
-      ) : Center(child:TextButton(child: Text("INICIAR"), onPressed: (){
-        setState((){ch =  IOWebSocketChannel.connect(Uri.parse(session.screenTVRoute), headers: {"authorization": session.token});});
-      }));
-    
-    
-    
-  }
-
-
-  @override
-  void dispose() {
-    widget.channel.sink.close();
-    super.dispose();
   }
 }
 
@@ -130,6 +81,93 @@ class _OrderCardState extends State<OrderCard> {
               child: Row(children: [TextButton(child: Text("PREPARAR"), onPressed: (){})]),
             )
         ])
+      )
+    );
+  }
+}
+
+
+class PanScreen extends StatefulWidget {
+  final ScrollController scroll = new ScrollController();
+  @override
+  _PanScreenState createState() => _PanScreenState();
+}
+
+class _PanScreenState extends State<PanScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => KitchenController("pan", controller: widget.scroll),
+      child: Consumer<KitchenController>(
+        builder: (context, ctx, child){
+          return Scaffold(
+            appBar: AppBar(title: Text("Cozinha" + (ctx.code == "" ? "" : " - ID: ${ctx.code}"))),
+            floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
+            body: Screen(
+              onRefresh: () => new Future(() => setState(() {})),
+              children: [
+                Row(
+                  children: [
+                    Expanded(flex: 35,
+                    child: ListView(controller: widget.scroll, children: [
+                        for (var order in ctx.pending) OrderCard(order: order)
+                      ]),
+                    ),
+                    Expanded(flex: 65,
+                      child: ListView(children: [
+                        for (var order in ctx.preparing) OrderCard(order: order)
+                      ]),
+                    )
+                  ],
+                )
+              ]
+            )
+          );
+        }
+      )
+    );
+  }
+}
+
+class SpoonScreen extends StatefulWidget {
+  final String code;
+  SpoonScreen({this.code});
+  @override
+  _SpoonScreenState createState() => _SpoonScreenState();
+}
+
+class _SpoonScreenState extends State<SpoonScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => KitchenController("spoon", panID: widget.code),
+      child: Consumer<KitchenController>(
+        builder: (context, ctx, child){
+          return Scaffold(
+            appBar: AppBar(title: Text("Cozinha" + (ctx.code == "" ? "" : " - ID: ${ctx.code}"))),
+            floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
+            body: Column(
+              children: [
+                Expanded(flex: 90,
+                  child: GestureDetector(
+                    onVerticalDragUpdate: (details){
+                      details.delta.dy > 0 
+                      ? ctx.sendScrollToPan(details.delta.distanceSquared * -1)
+                      : ctx.sendScrollToPan(details.delta.distanceSquared);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.red, width: 2)
+                      ),
+                      child: Center(child:Text("Deslize para mexer na panela"))
+                    ),
+                  ),
+                )
+              ]
+            ),
+            
+          );
+        }
       )
     );
   }
