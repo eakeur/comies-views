@@ -1,5 +1,4 @@
-import 'package:comies_entities/comies_entities.dart';
-
+import 'package:comies/structures/structures.dart';
   Product deserializeProductMap(Map<String, dynamic> map) {
     try {
       Product prod = new Product();
@@ -9,7 +8,6 @@ import 'package:comies_entities/comies_entities.dart';
         prod.code = map['code'];
         prod.min = map['min'].toDouble();
         prod.active = map["active"];
-        prod.orders = map['orders'];
         prod.price = map['price'].toDouble();
         prod.unity = Unity.values[map['unity']];
         prod.partner = map["partner"];
@@ -143,7 +141,8 @@ import 'package:comies_entities/comies_entities.dart';
         Item op = new Item();
         op.id = map['id'];
         op.product = map["product"] != null ? deserializeProductMap(map["product"]) : null;
-        op.discount = map['discount'];
+        var dis = map['discount'];
+        op.discount = dis is int ? dis.toDouble() : dis is double ? dis : null;
         op.group = map['group'];
         op.order = map['order'];
         var qty = map['quantity'];
@@ -293,7 +292,6 @@ import 'package:comies_entities/comies_entities.dart';
         if (prod.code != null) "code": prod.code,
         if (prod.min != null) "min": prod.min,
         if (prod.active != null) "active": prod.active,
-        if (prod.orders != null) "orders": prod.orders,
         if (prod.price != null) "price": prod.price,
         if (prod.unity != null) "unity": prod.unity.index,
         if (prod.partner != null) "partner": prod.partner

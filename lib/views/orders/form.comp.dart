@@ -9,7 +9,7 @@ import 'package:comies/utils/declarations/themes.dart';
 import 'package:comies/views/costumers/form.comp.dart';
 import 'package:comies/views/costumers/list.comp.dart';
 import 'package:comies/views/products/list.comp.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

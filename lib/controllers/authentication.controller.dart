@@ -1,7 +1,7 @@
 import 'package:comies/main.dart';
 import 'package:comies/services/general.service.dart';
 import 'package:comies/services/settings.service.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:flutter/widgets.dart';
 
 class AuthenticationController extends ChangeNotifier {

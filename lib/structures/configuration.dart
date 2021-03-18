@@ -1,5 +1,4 @@
-import 'package:comies_entities/src/partner.dart';
-
+import 'package:comies/structures/structures.dart';
 class Configuration {
   int id;
   Partner partner;

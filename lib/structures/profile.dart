@@ -1,5 +1,4 @@
-import 'package:comies_entities/comies_entities.dart';
-
+import 'package:comies/structures/structures.dart';
 /// A group of settings that will allow or disallow operators to do things
 class Profile {
   ///The profile id

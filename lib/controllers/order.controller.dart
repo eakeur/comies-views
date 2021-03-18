@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'package:comies/services/general.service.dart';
 import 'package:comies/utils/converters.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:flutter/widgets.dart';
 
 class OrderController extends ChangeNotifier {

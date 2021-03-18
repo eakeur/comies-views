@@ -5,7 +5,7 @@ import 'package:comies/utils/declarations/environment.dart';
 import 'package:comies/views/products/edit.screen.dart';
 import 'package:comies/views/products/form.comp.dart';
 import 'package:comies/views/products/list.comp.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

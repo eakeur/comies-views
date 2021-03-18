@@ -1,9 +1,4 @@
-import 'package:comies_entities/src/configuration.dart';
-import 'package:comies_entities/src/operator.dart';
-import 'package:comies_entities/src/product.dart';
-import 'package:comies_entities/src/profile.dart';
-import 'package:comies_entities/src/store.dart';
-
+import 'package:comies/structures/structures.dart';
 class Partner {
   /// The partner's database ID
   int id;

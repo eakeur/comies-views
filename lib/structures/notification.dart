@@ -1,5 +1,4 @@
-import 'package:comies_entities/src/action.dart';
-
+import 'package:comies/structures/structures.dart';
 class Notification {
   String message;
   Action action;

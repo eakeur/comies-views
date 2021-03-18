@@ -1,7 +1,9 @@
+import 'package:comies/components/async.comp.dart';
 import 'package:comies/components/screen.comp.dart';
 import 'package:comies/components/titlebox.comp.dart';
 import 'package:comies/controllers/kitchen.controller.dart' if(dart.library.html) 'package:comies/controllers/kitchenweb.controller.dart' if(dart.library.io) 'package:comies/controllers/kitchen.controller.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
+import 'package:comies/utils/declarations/themes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -136,7 +138,14 @@ class SpoonScreen extends StatefulWidget {
   _SpoonScreenState createState() => _SpoonScreenState();
 }
 
-class _SpoonScreenState extends State<SpoonScreen> {
+class _SpoonScreenState extends State<SpoonScreen> with SingleTickerProviderStateMixin {
+  PageController c = new PageController();
+  TabController con;
+  @override
+  void initState(){
+    super.initState();
+    con = new TabController(length: 3, vsync: this);
+  }
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -144,31 +153,112 @@ class _SpoonScreenState extends State<SpoonScreen> {
       child: Consumer<KitchenController>(
         builder: (context, ctx, child){
           return Scaffold(
-            appBar: AppBar(title: Text("Cozinha" + (ctx.code == "" ? "" : " - ID: ${ctx.code}"))),
-            floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
-            body: Column(
-              children: [
-                Expanded(flex: 90,
-                  child: GestureDetector(
-                    onVerticalDragUpdate: (details){
-                      details.delta.dy > 0 
-                      ? ctx.sendScrollToPan(details.delta.distanceSquared * -1)
-                      : ctx.sendScrollToPan(details.delta.distanceSquared);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.red, width: 2)
-                      ),
-                      child: Center(child:Text("Deslize para mexer na panela"))
-                    ),
-                  ),
-                )
-              ]
+            appBar: AppBar(title: Text("Cozinha" + (ctx.code == "" ? "" : " - ID: ${ctx.code}")),
+              bottom: TabBar(
+                controller: con,
+                tabs: [
+                  Tab(child:Text("Deslizador")),
+                  Tab(child:Text("Pendentes")),
+                  Tab(child:Text("Preparando")),
+                ],
+              ), 
             ),
-            
+            floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
+            body: Builder(
+              builder: (ct){
+                return TabBarView(
+                  controller: con,
+                  children: [
+                    Column(
+                      children: [
+                        Expanded(flex: 100,
+                          child: GestureDetector(
+                            onVerticalDragUpdate: (details){
+                              details.delta.dy > 0 
+                              ? ctx.sendToPan("scroll", details.delta.distanceSquared * -1)
+                              : ctx.sendToPan("scroll", details.delta.distanceSquared);
+                            },
+                            child: Container(
+                              child: Card(child: Center(child:Text("Deslize para mexer na panela")))
+                            ),
+                          ),
+                        ),
+                      ]
+                    ),
+                    Column(
+                      children: [
+                        Expanded(flex: 10, child: TitleBox("Pedidos pendentes")),
+                        Expanded(flex:90,
+                          child: ctx.pending.isNotEmpty ? ListView(
+                            children: ListTile.divideTiles(context: ct, tiles: [
+                              for (var ord in ctx.pending)
+                              ListTile(
+                                onTap: () => openPendingOrderDialog(ord, ct),
+                                title: Text("Pedido Nº ${ord.id}"),
+                                subtitle: Text("R\$${ord.price.toString()} | ${ord.status.toString().replaceFirst('.', ": ").replaceFirst("pending", "pendente")}"),
+                              )
+                            ]).toList()
+                          ) : Center(child:Text("Nenhum pedido pendente")),
+                        )
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        Expanded(flex: 10, child: TitleBox("Pedidos em preparo")),
+                        Expanded(flex:90,
+                          child: ctx.preparing.isNotEmpty ? ListView(
+                            children: ListTile.divideTiles(context: ct, tiles: [
+                              for (var ord in ctx.preparing)
+                              ListTile(
+                                title: Text("Pedido Nº ${ord.id}"),
+                                subtitle: Text("R\$${ord.price.toString()} | ${ord.status.toString().replaceFirst('.', ": ").replaceFirst("preparing", "preparando")}"),
+                              )
+                            ]).toList()
+                          ) : Center(child:Text("Nenhum pedido nesta etapa")),
+                        )
+                      ],
+                    )
+                  ],
+                );
+              },
+            ),
           );
         }
       )
     );
   }
+
+
+  void openPendingOrderDialog(Order order, BuildContext ctx){
+      Scaffold.of(ctx).showBottomSheet((ctx){
+        return Card(
+          elevation: 8,
+          child: Container(
+            height: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TitleBox("PEDIDO Nº "+order.id.toString(),
+                  subtitle: "R\$${order.price.toString()} | ${order.status.toString().replaceFirst('.', ": ").replaceFirst("pending", "pendente")}",
+                ),
+                if (order.items.isNotEmpty) DataTable(
+                  columns: [
+                    DataColumn(label: Text("Nº")), DataColumn(label: Text("Produto")), DataColumn(label: Text("Quantidade")),
+                  ],
+                  rows: [
+                    for (var item in order.items)
+                    DataRow(
+                      cells:[
+                        DataCell(Text(item.group.toString())), DataCell(Text(item.product.name.toString())), DataCell(Text("R\$ "+item.quantity.toString())),
+                      ]
+                    )
+                  ],
+                ),
+                AsyncButton(text: "Produzir", icon: Icon(Icons.restaurant_menu), isLoading: false, onPressed: (){})
+              ],
+            )
+          )
+        );
+      });
+    }
 }

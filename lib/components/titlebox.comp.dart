@@ -20,7 +20,7 @@ class TitleBox extends StatelessWidget {
       ),
       child: ListTile(
         title: Text(title.toUpperCase(), style: TextStyle(color: paint ? Colors.white : Theme.of(context).primaryColor , fontSize: 17, fontWeight: FontWeight.w600)),
-        subtitle: subtitle != null ? Text(subtitle, style: TextStyle(color: Colors.white)) : null,
+        subtitle: subtitle != null ? Text(subtitle, style: TextStyle(color: Theme.of(context).accentColor)) : null,
         trailing: suffix
       )
     );

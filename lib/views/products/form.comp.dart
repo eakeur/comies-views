@@ -5,7 +5,7 @@ import 'package:comies/components/titlebox.comp.dart';
 import 'package:comies/controllers/product.controller.dart';
 import 'package:comies/utils/declarations/environment.dart';
 import 'package:comies/utils/declarations/themes.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:select_form_field/select_form_field.dart';

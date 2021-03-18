@@ -1,5 +1,4 @@
-import 'package:comies_entities/src/costumer.dart';
-
+import 'package:comies/structures/structures.dart';
 class Phone {
   int id;
   String ddd;

@@ -4,7 +4,7 @@ import 'package:comies/services/settings.service.dart';
 import 'package:comies/utils/converters.dart';
 import 'package:comies/utils/validators.dart';
 import 'package:comies/views/authentication/authentication.screen.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';

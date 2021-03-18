@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io' as IO;
 import 'package:comies/main.dart';
 import 'package:comies/utils/converters.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
@@ -12,20 +12,21 @@ class KitchenController extends ChangeNotifier {
   List<Order> _pending = [];
   List<Order> _preparing = [];
   List<Order> _orders = [];
+  Order _order;
+
   String _code = "";
 
-  UnmodifiableListView get pending =>  UnmodifiableListView(_pending);
-  UnmodifiableListView get preparing =>  UnmodifiableListView(_preparing);
+  UnmodifiableListView<Order> get pending =>  UnmodifiableListView<Order>(_pending);
+  UnmodifiableListView<Order> get preparing =>  UnmodifiableListView<Order>(_preparing);
+  Order get selectedOrder => _order;
+  bool get hasSelectedOrder => _order != null;
   String get code => _code;
 
   IO.WebSocket _pan;
-  IO.WebSocket _tv;
   IO.WebSocket _spoon;
 
 
   String get kitchenRoute => "${session.server.replaceFirst("http://", "ws://").replaceFirst("https://", "wss://")}/kitchen/${session.partner.id}/${session.store.id}";
-  String get screenRoute => "${session.server.replaceFirst("http://", "ws://").replaceFirst("https://", "wss://")}/screen/${session.partner.id}/${session.store.id}/";
-  String get screenTVRoute => "${session.server.replaceFirst("http://", "ws://").replaceFirst("https://", "wss://")}/screen/${session.partner.id}/${session.store.id}/TV";
 
   KitchenController(String type, {ScrollController controller, String panID}){
     switch (type){
@@ -40,42 +41,60 @@ class KitchenController extends ChangeNotifier {
 
 
   void connectToKitchenAsPan(ScrollController controller) async {
-    _pan = await IO.WebSocket.connect(kitchenRoute, headers: {"authorization": session.token});
-      _pan.listen(listenToPanUpdates);
-      _tv = await IO.WebSocket.connect(screenTVRoute, headers: {"authorization": session.token});
-      _tv.listen((data) => listenToTVUpdates(data, controller));
+    _pan = await IO.WebSocket.connect(kitchenRoute+"/TV", headers: {"authorization": session.token});
+      _pan.listen((data) => listenToPanUpdates(data, controller));
     
   }
 
 
 
-  void listenToPanUpdates(dynamic data){
+  void listenToPanUpdates(dynamic data, ScrollController controller){
     try {
       if (data != null){
         var decoded = jsonDecode(data);
-        if (decoded is List){
-          decoded.map((e) => deserializeOrderMap(e)).toList().forEach((ord) {
-            if (!_orders.any((order) => order.id == ord.id)) _orders.add(ord);
-            _pending = _orders.where((ord) => ord.status == Status.pending).toList();
-            _preparing = _orders.where((ord) => ord.status == Status.preparing).toList();
-          });
-          notifyListeners();
-        } else throw Exception("Usuportted data type for this endpoint");
-      } else throw Exception("Nothing receive from server");
+
+        if (decoded['sender'] == 'server'){
+          if (decoded['type'] == 'pan-initial'){
+            decoded['data'].map((e) => deserializeOrderMap(e)).toList().forEach((ord) {
+              if (!_orders.any((order) => order.id == ord.id)) _orders.add(ord);
+              _pending = _orders.where((ord) => ord.status == Status.pending).toList();
+              _preparing = _orders.where((ord) => ord.status == Status.preparing).toList();
+            });
+             _code = decoded['code'].toString();
+          }
+        }
+
+        if (decoded['sender'] == 'spoon'){
+          switch (decoded['type']){
+            case 'scroll': controller.position.jumpTo(controller.position.pixels + decoded['value']);break;
+            case 'display-order': _order = _orders.firstWhere((order) => order.id == decoded['value'], orElse: () => null); break;
+          }
+        }
+ 
+        notifyListeners();
+      } else throw Exception("Nothing received from server");
     } catch (e) {
       print(e);
     }
   }
 
-  void listenToTVUpdates(dynamic data, ScrollController controller){
+  void listenToSpoonUpdates(dynamic data){
     try {
-      if (data != null && double.tryParse(data) != null){
-        var scroll = double.parse(data);
-        controller.position.jumpTo(controller.position.pixels + scroll);
-      } else if (data is String && data.length > 0 && data.length <= 8){
-        _code = data.toString();
+      if (data != null){
+        var decoded = jsonDecode(data);
+
+        if (decoded['sender'] == 'server'){
+          if (decoded['type'] == 'spoon-initial'){
+            decoded['data'].map((e) => deserializeOrderMap(e)).toList().forEach((ord) {
+              if (!_orders.any((order) => order.id == ord.id)) _orders.add(ord);
+              _pending = _orders.where((ord) => ord.status == Status.pending).toList();
+              _preparing = _orders.where((ord) => ord.status == Status.preparing).toList();
+            });
+          }
+        }
+ 
         notifyListeners();
-      } else throw Exception("Usuportted data type for this endpoint");
+      } else throw Exception("Nothing received from server");
     } catch (e) {
       print(e);
     }
@@ -83,18 +102,18 @@ class KitchenController extends ChangeNotifier {
 
   void connectToKitchenAsSpoon(String panID) async {
     _code = panID;
-    _spoon = await IO.WebSocket.connect(screenRoute+"$panID", headers: {"authorization": session.token});
+    _spoon = await IO.WebSocket.connect(kitchenRoute+"/$panID", headers: {"authorization": session.token});
+    _spoon.listen((data) => listenToSpoonUpdates(data));
   }
 
-  void sendScrollToPan(double scroll){
-   _spoon.add(scroll.toString());
+  void sendToPan(String event, dynamic value){
+   _spoon.add(jsonEncode({'sender': 'spoon', 'type':event, 'code':_code, 'value':value}));
   }
 
 
   @override
   void dispose(){
     if (_pan != null) _pan.close();
-    if (_tv != null) _tv.close();
     if (_spoon != null) _spoon.close();
     super.dispose();
   }

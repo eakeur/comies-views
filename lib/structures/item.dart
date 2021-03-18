@@ -1,6 +1,4 @@
-import 'package:comies_entities/src/order.dart';
-import 'package:comies_entities/src/product.dart';
-
+import 'package:comies/structures/structures.dart';
 class Item {
   int id;
   Order order;

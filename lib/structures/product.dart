@@ -1,7 +1,4 @@
-import 'package:comies_entities/comies_entities.dart';
-import 'package:comies_entities/src/enum.dart';
-import 'package:comies_entities/src/order.dart';
-
+import 'package:comies/structures/structures.dart';
 class Product {
   int id;
   String name;
@@ -13,6 +10,5 @@ class Product {
   bool active;
   
   Partner partner;
-  List<Order> orders;
   
 }

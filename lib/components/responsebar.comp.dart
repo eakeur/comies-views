@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:comies_entities/comies_entities.dart' as ent;
+import 'package:comies/structures/structures.dart' as ent;
 
 // ignore: non_constant_identifier_names
 SnackBar ResponseBar(ent.Response res, {Function action}) => SnackBar(

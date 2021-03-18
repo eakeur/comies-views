@@ -1,5 +1,4 @@
-import 'package:comies_entities/comies_entities.dart';
-
+import 'package:comies/structures/structures.dart';
 class Operator {
   int id;
   String name;

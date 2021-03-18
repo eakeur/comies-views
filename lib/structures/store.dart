@@ -1,7 +1,4 @@
-
-
-import 'package:comies_entities/comies_entities.dart';
-
+import 'package:comies/structures/structures.dart';
 class Store {
   ///The store id
   int id;

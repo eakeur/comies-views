@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:comies/main.dart';
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:http/http.dart' show get, put, post, delete;
 
 

@@ -1,4 +1,4 @@
-import 'package:comies_entities/comies_entities.dart';
+import 'package:comies/structures/structures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 

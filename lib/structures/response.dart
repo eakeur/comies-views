@@ -1,5 +1,4 @@
-import 'package:comies_entities/src/notification.dart';
-
+import 'package:comies/structures/structures.dart';
 class Response<T> {
   String message;
   bool success;
