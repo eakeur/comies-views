@@ -34,6 +34,9 @@ class OrderController extends ChangeNotifier {
   Service<Order> service = new Service<Order>("orders", serializeOrder, deserializeOrderMap);
 
 
+  LoadStatus orderLoadStatus = LoadStatus.waitingStart;
+  bool addOrderPending = false;
+
 
 
   bool get areItemsValid {
@@ -74,10 +77,29 @@ class OrderController extends ChangeNotifier {
   }
 
 
-  Future<Response> addOrder(){
+  Future<Response> addOrder() async {
     _order.placed = DateTime.now();
     _order.price = totalPrice;
-    return service.add(order);
+    if(_order != null){
+      orderLoadStatus = LoadStatus.loading;
+      addOrderPending = true;
+      notifyListeners();
+      try {
+        var res = await service.add(order);
+        orderLoadStatus = LoadStatus.loaded;
+        if (!res.success) throw res;
+        return res;
+      } catch (e) {
+        orderLoadStatus = LoadStatus.failed;
+        throw e;
+      } finally {
+        addOrderPending = false;
+        notifyListeners();
+      }
+    } else {
+      notifyListeners();
+      return new Response();
+    }
   }
 
 

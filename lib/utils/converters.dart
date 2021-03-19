@@ -119,6 +119,7 @@ import 'package:comies/structures/structures.dart';
       Order op = new Order();
       op.id = map['id'];
       op.active = map["active"];
+      op.observations = map['observations'];
       op.address = map['address'] != null ? deserializeAddressMap(map['address']) : null;
       op.costumer = map['costumer'] != null ? deserializeCostumerMap(map['costumer']) : null;
       op.deliverType = DeliverType.values[map['deliverType']];
@@ -145,6 +146,7 @@ import 'package:comies/structures/structures.dart';
         op.discount = dis is int ? dis.toDouble() : dis is double ? dis : null;
         op.group = map['group'];
         op.order = map['order'];
+        op.done = map['done'];
         var qty = map['quantity'];
         op.quantity = qty is int ? qty.toDouble() : qty is double ? qty : null;
         return op;
@@ -189,6 +191,7 @@ import 'package:comies/structures/structures.dart';
       return {
         if (op.id != null) "id": op.id,
         if (op.active != null) "active": op.active,
+        if (op.observations != null) "observations": op.observations,
         if (op.address != null) "address": serializeAddress(op.address),
         if (op.costumer != null) "costumer": serializeCostumer(op.costumer),
         if (op.deliverType != null) "deliverType": op.deliverType.index,
@@ -211,6 +214,7 @@ import 'package:comies/structures/structures.dart';
         if (op.id != null) "id": op.id,
         if (op.discount != null) "discount": op.discount,
         if (op.group != null) "group": op.group,
+        if (op.done != null) "done": op.done,
         if (op.order != null) "order": serializeOrder(op.order),
         if (op.product != null) "product": serializeProduct(op.product),
         if (op.quantity != null) "quantity": op.quantity,

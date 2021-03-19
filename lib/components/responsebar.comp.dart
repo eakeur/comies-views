@@ -7,6 +7,6 @@ SnackBar ResponseBar(ent.Response res, {Function action}) => SnackBar(
   content: res.notification != null ? ListTile(
     title: Text(res.notification.message, style: TextStyle(color: Colors.white))
   ) : ListTile(title: Text("Sucesso!", style: TextStyle(color: Colors.white))),
-  action: action != null ? SnackBarAction(label: "TENTAR DE NOVO", onPressed: action, textColor: Colors.white) : null,
+  action: action != null ? SnackBarAction(label: res.success ? "DESFAZER" : "TENTAR DE NOVO", onPressed: action, textColor: Colors.white) : null,
   duration: Duration(seconds: 5)
 );

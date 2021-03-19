@@ -1,10 +1,10 @@
-import 'package:comies/components/async.comp.dart';
-import 'package:comies/components/screen.comp.dart';
-import 'package:comies/components/titlebox.comp.dart';
 import 'package:comies/controllers/kitchen.controller.dart' if(dart.library.html) 'package:comies/controllers/kitchenweb.controller.dart' if(dart.library.io) 'package:comies/controllers/kitchen.controller.dart';
-import 'package:comies/structures/structures.dart';
-import 'package:comies/utils/declarations/themes.dart';
+import 'package:comies/structures/enum.dart';
+import 'package:comies/utils/declarations/environment.dart';
+import 'package:comies/views/orders/order.comp.dart';
+import 'package:comies/views/orders/spoon.screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
 class OrdersPanelScreen extends StatefulWidget {
@@ -32,9 +32,7 @@ class OrdersPanel extends State<OrdersPanelScreen> {
                   Scaffold.of(context).showBottomSheet((context) => Container(
                     child: TextFormField(
                       controller: c,
-                      onFieldSubmitted: (s) => setState((){type = "spoon";}),
-                      onEditingComplete: () => setState((){type = "spoon";}),
-                      onSaved: (s) => setState((){type = "spoon";}),
+                      onFieldSubmitted: (s){Navigator.pop(context); setState((){type = "spoon";});},
                       decoration: InputDecoration(
                         labelText: "Código da panela",
                         hintMaxLines: 3,
@@ -61,33 +59,6 @@ class OrdersPanel extends State<OrdersPanelScreen> {
 }
 
 
-class OrderCard extends StatefulWidget {
-  final Order order;
-  OrderCard({this.order});
-  @override
-  _OrderCardState createState() => _OrderCardState();
-}
-
-class _OrderCardState extends State<OrderCard> {
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Container(
-        width: 300,
-        child: Column(
-          children: [
-            TitleBox("PEDIDO Nº "+widget.order.id.toString()),
-            for (var it in widget.order.items) ListTile(title: Text("PRODUTO: ${it.product.name} - QUANTIDADE: ${it.quantity}")),
-            Container(
-              alignment: Alignment.bottomRight,
-              child: Row(children: [TextButton(child: Text("PREPARAR"), onPressed: (){})]),
-            )
-        ])
-      )
-    );
-  }
-}
-
 
 class PanScreen extends StatefulWidget {
   final ScrollController scroll = new ScrollController();
@@ -103,162 +74,38 @@ class _PanScreenState extends State<PanScreen> {
       child: Consumer<KitchenController>(
         builder: (context, ctx, child){
           return Scaffold(
-            appBar: AppBar(title: Text("Cozinha" + (ctx.code == "" ? "" : " - ID: ${ctx.code}"))),
-            floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
-            body: Screen(
-              onRefresh: () => new Future(() => setState(() {})),
-              children: [
-                Row(
-                  children: [
-                    Expanded(flex: 35,
-                    child: ListView(controller: widget.scroll, children: [
-                        for (var order in ctx.pending) OrderCard(order: order)
-                      ]),
-                    ),
-                    Expanded(flex: 65,
-                      child: ListView(children: [
-                        for (var order in ctx.preparing) OrderCard(order: order)
-                      ]),
-                    )
-                  ],
+            appBar: AppBar(
+              title: Text("Cozinha" + (ctx.code == "" ? "" : " - ID: ${ctx.code}")),
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(20),
+                child: Container(
+                  padding: EdgeInsets.all(10),
+                  child: Wrap(
+                    children: [
+                      Chip(label: Text("Filtro: "+ctx.statusName), elevation: 8, backgroundColor: Theme.of(context).accentColor)
+                    ],
+                  ),
                 )
-              ]
-            )
-          );
-        }
-      )
-    );
-  }
-}
-
-class SpoonScreen extends StatefulWidget {
-  final String code;
-  SpoonScreen({this.code});
-  @override
-  _SpoonScreenState createState() => _SpoonScreenState();
-}
-
-class _SpoonScreenState extends State<SpoonScreen> with SingleTickerProviderStateMixin {
-  PageController c = new PageController();
-  TabController con;
-  @override
-  void initState(){
-    super.initState();
-    con = new TabController(length: 3, vsync: this);
-  }
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => KitchenController("spoon", panID: widget.code),
-      child: Consumer<KitchenController>(
-        builder: (context, ctx, child){
-          return Scaffold(
-            appBar: AppBar(title: Text("Cozinha" + (ctx.code == "" ? "" : " - ID: ${ctx.code}")),
-              bottom: TabBar(
-                controller: con,
-                tabs: [
-                  Tab(child:Text("Deslizador")),
-                  Tab(child:Text("Pendentes")),
-                  Tab(child:Text("Preparando")),
-                ],
-              ), 
+              ),
             ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
-            body: Builder(
-              builder: (ct){
-                return TabBarView(
-                  controller: con,
+            body: Consumer<KitchenController>(
+              builder: (context, ctx, child){
+                return StaggeredGridView.count(
+                  controller: widget.scroll,
+                  crossAxisCount: MediaQuery.of(context).size.width > (widthDivisor + 220) ? 2 : 1,
                   children: [
-                    Column(
-                      children: [
-                        Expanded(flex: 100,
-                          child: GestureDetector(
-                            onVerticalDragUpdate: (details){
-                              details.delta.dy > 0 
-                              ? ctx.sendToPan("scroll", details.delta.distanceSquared * -1)
-                              : ctx.sendToPan("scroll", details.delta.distanceSquared);
-                            },
-                            child: Container(
-                              child: Card(child: Center(child:Text("Deslize para mexer na panela")))
-                            ),
-                          ),
-                        ),
-                      ]
-                    ),
-                    Column(
-                      children: [
-                        Expanded(flex: 10, child: TitleBox("Pedidos pendentes")),
-                        Expanded(flex:90,
-                          child: ctx.pending.isNotEmpty ? ListView(
-                            children: ListTile.divideTiles(context: ct, tiles: [
-                              for (var ord in ctx.pending)
-                              ListTile(
-                                onTap: () => openPendingOrderDialog(ord, ct),
-                                title: Text("Pedido Nº ${ord.id}"),
-                                subtitle: Text("R\$${ord.price.toString()} | ${ord.status.toString().replaceFirst('.', ": ").replaceFirst("pending", "pendente")}"),
-                              )
-                            ]).toList()
-                          ) : Center(child:Text("Nenhum pedido pendente")),
-                        )
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Expanded(flex: 10, child: TitleBox("Pedidos em preparo")),
-                        Expanded(flex:90,
-                          child: ctx.preparing.isNotEmpty ? ListView(
-                            children: ListTile.divideTiles(context: ct, tiles: [
-                              for (var ord in ctx.preparing)
-                              ListTile(
-                                title: Text("Pedido Nº ${ord.id}"),
-                                subtitle: Text("R\$${ord.price.toString()} | ${ord.status.toString().replaceFirst('.', ": ").replaceFirst("preparing", "preparando")}"),
-                              )
-                            ]).toList()
-                          ) : Center(child:Text("Nenhum pedido nesta etapa")),
-                        )
-                      ],
-                    )
+                    for (var order in ctx.orders) Container(child:Card(child: OrderBottomSheet(order:order, showButtons: false)))
                   ],
+                  staggeredTiles: [for (int i = 0; i < ctx.orders.length; i++) StaggeredTile.fit(1)],
                 );
-              },
-            ),
+              }
+            )
           );
         }
       )
     );
   }
-
-
-  void openPendingOrderDialog(Order order, BuildContext ctx){
-      Scaffold.of(ctx).showBottomSheet((ctx){
-        return Card(
-          elevation: 8,
-          child: Container(
-            height: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TitleBox("PEDIDO Nº "+order.id.toString(),
-                  subtitle: "R\$${order.price.toString()} | ${order.status.toString().replaceFirst('.', ": ").replaceFirst("pending", "pendente")}",
-                ),
-                if (order.items.isNotEmpty) DataTable(
-                  columns: [
-                    DataColumn(label: Text("Nº")), DataColumn(label: Text("Produto")), DataColumn(label: Text("Quantidade")),
-                  ],
-                  rows: [
-                    for (var item in order.items)
-                    DataRow(
-                      cells:[
-                        DataCell(Text(item.group.toString())), DataCell(Text(item.product.name.toString())), DataCell(Text("R\$ "+item.quantity.toString())),
-                      ]
-                    )
-                  ],
-                ),
-                AsyncButton(text: "Produzir", icon: Icon(Icons.restaurant_menu), isLoading: false, onPressed: (){})
-              ],
-            )
-          )
-        );
-      });
-    }
 }
+
+
+

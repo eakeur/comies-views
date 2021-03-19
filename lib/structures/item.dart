@@ -5,5 +5,6 @@ class Item {
   Product product;
   double quantity;
   double discount;
+  bool done;
   int group;
 }

@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:comies/components/async.comp.dart';
+import 'package:comies/components/responsebar.comp.dart';
 import 'package:comies/components/titlebox.comp.dart';
 import 'package:comies/controllers/costumer.controller.dart';
 import 'package:comies/controllers/order.controller.dart';
@@ -384,6 +385,10 @@ class _OrderRevisionComponentState extends State<OrderRevisionComponent> {
     bool isBigScreen() => MediaQuery.of(context).size.width > widthDivisor;
     void onListClick(Costumer costumer) => Provider.of<OrderController>(context, listen: false).setCostumer(costumer);
 
+  void onSave() => Provider.of<OrderController>(context, listen: false).addOrder()
+    .then((value) => ScaffoldMessenger.of(context).showSnackBar(ResponseBar(value)))
+    .catchError((value) => ScaffoldMessenger.of(context).showSnackBar(ResponseBar(value, action: onSave)));
+
   Widget getDetailed(OrderController pr){
     return ListView(
       children:[
@@ -403,8 +408,8 @@ class _OrderRevisionComponentState extends State<OrderRevisionComponent> {
               leading: Icon(Icons.credit_card)),
         if (pr.areItemsValid && pr.isCostumerValid && pr.areDetailsValid) Container(
           child: AsyncButton(icon: Icon(Icons.save), text: "SALVAR", style: successButton, 
-                    onPressed: pr.addOrder,
-                    isLoading: false),
+                    onPressed: onSave,
+                    isLoading: pr.addOrderPending),
         )
 
       ]

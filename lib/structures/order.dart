@@ -9,6 +9,7 @@ class Order {
   Costumer costumer;
   Operator operator;
   List<Item> items;
+  String observations;
   Address address;
   double price;
   bool active;
